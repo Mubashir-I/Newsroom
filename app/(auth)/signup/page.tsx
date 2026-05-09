@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function SignupPage() {
     const router = useRouter();
@@ -41,70 +42,91 @@ export default function SignupPage() {
     };
 
     return (
-        <div className="min-h-[85vh] flex items-center justify-center px-4">
-            <form
-                onSubmit={handleSubmit}
-                className="bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-md flex flex-col gap-5"
-            >
-                <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight">Create Account</h1>
-                    <p className="text-slate-400 text-sm">Join our secure newsroom community</p>
+        <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-300">
+            <div className="p-6">
+                <Link href="/" className="text-zinc-500 hover:text-zinc-300 flex items-center gap-2 transition-colors w-fit text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                </Link>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="w-full max-w-[380px]">
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Create Account</h1>
+                        <p className="text-sm text-zinc-500 mt-1">Join the campus news platform</p>
+                    </div>
+
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-2 rounded-lg">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm py-2.5 px-3 rounded-md mb-6">
                             {error}
                         </div>
                     )}
-                </div>
 
-                <div className="space-y-4">
-                    <input
-                        name="email"
-                        type="email"
-                        placeholder="Email Address"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                        required
-                    />
-                    <input
-                        name="username"
-                        placeholder="Username"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                        required
-                    />
-                    <input
-                        name="password"
-                        type="password"
-                        placeholder="Password"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                        required
-                    />
-                    <select
-                        name="role"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all appearance-none"
-                        defaultValue="reader"
-                    >
-                        <option value="reader">Reader</option>
-                        <option value="writer">Writer</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Email</label>
+                                <input
+                                    name="email"
+                                    type="email"
+                                    placeholder="alice@example.com"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Username</label>
+                                <input
+                                    name="username"
+                                    placeholder="alice123"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Password</label>
+                                <input
+                                    name="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Account Type</label>
+                                <select
+                                    name="role"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    defaultValue="reader"
+                                >
+                                    <option value="reader">Reader</option>
+                                    <option value="writer">Writer</option>
+                                    <option value="admin">Administrator</option>
+                                </select>
+                            </div>
+                        </div>
 
-                <button
-                    disabled={isLoading}
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20"
-                >
-                    {isLoading ? "Creating Account..." : "Sign Up"}
-                </button>
+                        <button
+                            disabled={isLoading}
+                            type="submit"
+                            className="w-full bg-zinc-100 hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-900 font-semibold py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 mt-2 text-sm"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign Up"}
+                        </button>
 
-                <div className="text-center">
-                    <p className="text-slate-400 text-sm">
-                        Already have an account?{" "}
-                        <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors">
-                            Sign In
-                        </Link>
-                    </p>
+                        <div className="text-left mt-4 border-t border-zinc-900 pt-6">
+                            <p className="text-zinc-500 text-sm">
+                                Already registered?{" "}
+                                <Link href="/login" className="text-zinc-300 hover:text-zinc-100 transition-colors font-medium">
+                                    Sign In
+                                </Link>
+                            </p>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     );
 }

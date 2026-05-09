@@ -3,6 +3,8 @@
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -36,70 +38,84 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-[85vh] flex items-center justify-center px-4">
-            <form
-                onSubmit={handleSubmit}
-                className="bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-slate-800 shadow-2xl w-full max-w-md flex flex-col gap-5"
-            >
-                <div className="text-center space-y-2">
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight">Welcome Back</h1>
-                    <p className="text-slate-400 text-sm">Sign in to your secure dashboard</p>
+        <div className="min-h-screen bg-zinc-950 flex flex-col font-sans text-zinc-300">
+            <div className="p-6">
+                <Link href="/" className="text-zinc-500 hover:text-zinc-300 flex items-center gap-2 transition-colors w-fit text-sm font-medium">
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                </Link>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center p-4">
+                <div className="w-full max-w-[380px]">
+                    <div className="mb-8">
+                        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Login</h1>
+                        <p className="text-sm text-zinc-500 mt-1">Enter your credentials to continue</p>
+                    </div>
+
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs py-2 rounded-lg">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm py-2.5 px-3 rounded-md mb-6">
                             {error}
                         </div>
                     )}
-                </div>
 
-                <div className="space-y-4">
-                    <input
-                        name="username"
-                        placeholder="Username"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                        required
-                    />
-                    <input
-                        name="password"
-                        type="password"
-                        placeholder="Password"
-                        className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-slate-200 placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
-                        required
-                    />
-                </div>
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Username</label>
+                                <input
+                                    name="username"
+                                    placeholder="alice123"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-1.5">
+                                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wide">Password</label>
+                                    <a href="#" className="text-xs text-zinc-500 hover:text-zinc-300">Forgot?</a>
+                                </div>
+                                <input
+                                    name="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="w-full bg-zinc-950 border border-zinc-800 p-2.5 rounded-md text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 transition-all sm:text-sm"
+                                    required
+                                />
+                            </div>
+                        </div>
 
-                <div className="flex items-center justify-between px-1">
-                    <label className="flex items-center gap-2 cursor-pointer group">
-                        <input
-                            type="checkbox"
-                            name="remember"
-                            className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-blue-600 focus:ring-blue-500/50 accent-blue-600"
-                        />
-                        <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">Remember me</span>
-                    </label>
-                    <a href="#" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">Forgot Password?</a>
-                </div>
+                        <div className="flex items-center gap-2 mt-2">
+                            <input
+                                type="checkbox"
+                                name="remember"
+                                id="remember"
+                                className="w-3.5 h-3.5 rounded-sm border-zinc-700 bg-zinc-950 text-zinc-100 focus:ring-1 focus:ring-zinc-500 focus:ring-offset-zinc-950"
+                            />
+                            <label htmlFor="remember" className="text-sm text-zinc-400 select-none cursor-pointer">
+                                Remember 30 days
+                            </label>
+                        </div>
 
-                <button
-                    disabled={isLoading}
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-900/20"
-                >
-                    {isLoading ? "Authenticating..." : "Sign In"}
-                </button>
+                        <button
+                            disabled={isLoading}
+                            type="submit"
+                            className="w-full bg-zinc-100 hover:bg-zinc-200 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-900 font-semibold py-2.5 rounded-md transition-colors flex items-center justify-center gap-2 mt-4 text-sm"
+                        >
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
+                        </button>
 
-                <div className="relative flex items-center py-2">
-                    <div className="flex-grow border-t border-slate-800"></div>
-                    <span className="flex-shrink mx-4 text-slate-600 text-[10px] uppercase tracking-widest font-bold">Or continue with</span>
-                    <div className="flex-grow border-t border-slate-800"></div>
+                        <div className="text-left mt-6 border-t border-zinc-900 pt-6">
+                            <p className="text-zinc-500 text-sm">
+                                No account?{" "}
+                                <Link href="/signup" className="text-zinc-300 hover:text-zinc-100 transition-colors font-medium">
+                                    Create one
+                                </Link>
+                            </p>
+                        </div>
+                    </form>
                 </div>
-                <button
-                    type="button"
-                    onClick={() => router.push("/signup")}
-                    className="w-full bg-slate-800/50 hover:bg-slate-800 text-slate-300 font-medium py-3 rounded-xl transition-all border border-slate-700"
-                >
-                    Create New Account
-                </button>
-            </form>
+            </div>
         </div>
     );
 }
