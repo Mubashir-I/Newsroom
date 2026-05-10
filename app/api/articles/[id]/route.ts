@@ -1,71 +1,70 @@
+import { NextResponse } from "next/server";
 import { DatabaseConnection } from "@/lib/Database";
 import Article from "@/models/Article";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/AuthOptions";
-import { NextResponse } from "next/server";
 
-type RouteContext = { params: Promise<{ id: string }> };
-
-export async function GET(req: Request, context: RouteContext) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         await DatabaseConnection();
-        const article = await Article.findByIdAndUpdate(
-            id,
-            { $inc: { views: 1 } },
-            { new: true }
-        ).populate('author', 'username email');
 
-        if (!article) {
-            return NextResponse.json({ message: "Article not found" }, { status: 404 });
+        // We update views atomically when someone reads
+        const article = await Article.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true }).populate('author', 'username email');
+
+        if (!article) return NextResponse.json({ message: "Not found" }, { status: 404 });
+
+        // Security: If draft, only author or admin can see it
+        if (article.status === 'draft') {
+            const session = await getServerSession(authOptions);
+            const isAuthor = session?.user?.email === (article.author as any)?.email;
+            const isAdmin = (session?.user as any)?.role === 'admin';
+
+            if (!isAuthor && !isAdmin) {
+                return NextResponse.json({ message: "Not found" }, { status: 404 }); // Hide existence
+            }
         }
-        return NextResponse.json(article);
-    } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+
+        return NextResponse.json({ article }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "Internal Error" }, { status: 500 });
     }
 }
 
-export async function PUT(req: Request, context: RouteContext) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await context.params;
         const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+        if (!session || !["writer", "admin"].includes((session.user as any).role)) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+        }
 
-        await DatabaseConnection();
+        const { id } = await params;
         const body = await req.json();
 
-        const article = await Article.findById(id);
-        if (!article) return NextResponse.json({ message: "Not found" }, { status: 404 });
+        await DatabaseConnection();
 
-        // Only author or admin can update
-        if (article.author.toString() !== (session.user as any).id && (session.user as any).role !== 'admin') {
-            return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-        }
+        // Ideally ensure writer is authoring it
+        const article = await Article.findByIdAndUpdate(id, body, { new: true });
 
-        const updated = await Article.findByIdAndUpdate(id, body, { new: true });
-        return NextResponse.json(updated);
-    } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return NextResponse.json({ article }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "Internal Error" }, { status: 500 });
     }
 }
 
-export async function DELETE(req: Request, context: RouteContext) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
-        const { id } = await context.params;
         const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
-        await DatabaseConnection();
-        const article = await Article.findById(id);
-        if (!article) return NextResponse.json({ message: "Not found" }, { status: 404 });
-
-        if (article.author.toString() !== (session.user as any).id && (session.user as any).role !== 'admin') {
-            return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+        if (!session || !["writer", "admin"].includes((session.user as any).role)) {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
         }
 
+        const { id } = await params;
+        await DatabaseConnection();
         await Article.findByIdAndDelete(id);
-        return NextResponse.json({ message: "Deleted" });
-    } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: 500 });
+
+        return NextResponse.json({ message: "Deleted" }, { status: 200 });
+    } catch (error) {
+        return NextResponse.json({ message: "Internal Error" }, { status: 500 });
     }
 }

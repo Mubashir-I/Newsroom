@@ -12,7 +12,8 @@ import {
   Bookmark,
   TrendingUp,
   LogOut,
-  Newspaper
+  Newspaper,
+  Activity
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -25,22 +26,20 @@ export function Sidebar() {
     switch (role) {
       case "admin":
         return [
-          { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
-          { name: "User Management", href: "/dashboard/admin/users", icon: Users },
-          { name: "System Logs", href: "/dashboard/admin/logs", icon: Settings },
+          { name: "Overview & Users", href: "/dashboard/admin", icon: LayoutDashboard },
+          { name: "Article Management", href: "/dashboard/admin#articles", icon: Activity },
         ];
       case "writer":
         return [
-          { name: "My Articles", href: "/dashboard/writer", icon: FileText },
+          { name: "Writer Overview", href: "/dashboard/writer", icon: LayoutDashboard },
           { name: "Write New", href: "/dashboard/writer/new", icon: PenTool },
-          { name: "Analytics", href: "/dashboard/writer/analytics", icon: TrendingUp },
+          { name: "My Drafts", href: "/dashboard/writer?status=draft", icon: FileText },
+          { name: "Published", href: "/dashboard/writer?status=published", icon: Newspaper },
         ];
       case "reader":
       default:
         return [
           { name: "Latest News", href: "/dashboard/reader", icon: Newspaper },
-          { name: "Saved Articles", href: "/dashboard/reader/saved", icon: Bookmark },
-          { name: "Preferences", href: "/dashboard/reader/preferences", icon: Settings },
         ];
     }
   };
@@ -68,8 +67,8 @@ export function Sidebar() {
               key={link.name}
               href={link.href}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${isActive
-                  ? "bg-zinc-900 text-zinc-100"
-                  : "text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200"
+                ? "bg-zinc-900 text-zinc-100"
+                : "text-zinc-400 hover:bg-zinc-900/50 hover:text-zinc-200"
                 }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? "text-zinc-100" : "text-zinc-500"}`} />

@@ -15,6 +15,11 @@ export default withAuth(
     if (path.startsWith("/dashboard/reader") && token?.role !== "reader" && token?.role !== "admin") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
+
+    // If they are on an admin route but aren't an admin
+    if (path.startsWith("/dashboard/admin") && token?.role !== "admin") {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
   },
   {
     callbacks: {

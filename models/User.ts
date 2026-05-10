@@ -1,6 +1,6 @@
 import { Schema, models, model } from 'mongoose'
 
-const UserSchema = new Schema ({
+const UserSchema = new Schema({
     email: {
         type: String,
         lowercase: true,
@@ -23,6 +23,14 @@ const UserSchema = new Schema ({
         required: [true, "Passwords are no more optional in secure systems"],
         select: false
     },
+    isActive: {
+        type: Boolean,
+        default: true
+    },
+    isSystem: {
+        type: Boolean,
+        default: false
+    },
     interests: {
         type: [String],
         default: []
@@ -39,7 +47,7 @@ const UserSchema = new Schema ({
         type: Date,
         default: null
     }
-}, {timestamps: true});
+}, { timestamps: true });
 
 const User = models.User || model("User", UserSchema);
 export default User;

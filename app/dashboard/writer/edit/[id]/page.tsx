@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Save, Send, Loader2, Upload } from "lucide-react";
-import { useEffect, useState, use } from "react";
+import { ArrowLeft, Save, Send, Loader2, Upload, Bold, Italic, Link as LinkIcon, Image as ImageIcon, Type } from "lucide-react";
+import { useEffect, useState, use, useRef } from "react";
 import { uploadToCloudinary } from "@/lib/Upload";
 import Image from "next/image";
 
@@ -11,15 +11,16 @@ const CATEGORIES = [
     { value: "tech", label: "Technology" },
     { value: "events", label: "Events" },
     { value: "sports", label: "Sports" },
-    { value: "science", label: "Science" },
+    { value: "lifestyle", label: "Lifestyle" },
+    { value: "career", label: "Career" },
     { value: "culture", label: "Arts & Culture" },
-    { value: "politics", label: "Politics" },
-    { value: "health", label: "Health" },
 ];
 
 export default function WriterEditArticle({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
     const router = useRouter();
+    const contentRef = useRef<HTMLTextAreaElement>(null);
+
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -31,24 +32,59 @@ export default function WriterEditArticle({ params }: { params: Promise<{ id: st
     const [coverImage, setCoverImage] = useState("");
     const [status, setStatus] = useState("draft");
 
+    const insertTag = (tag: string, type: 'wrap' | 'block' | 'h2' | 'img' | 'a' = 'wrap') => {
+        const textarea = contentRef.current;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selected = content.substring(start, end);
+        let replacement = "";
+
+        if (type === 'wrap' || type === 'a') {
+            if (tag === 'a' || type === 'a') {
+                const url = prompt("Enter URL:", "https://");
+                if (!url) return;
+                replacement = `<a href="${url}">${selected || 'link text'}</a>`;
+            } else {
+                replacement = `<${tag}>${selected || tag}</${tag}>`;
+            }
+        } else if (type === 'img') {
+            const url = prompt("Enter Image URL:", "https://images.unsplash.com/...");
+            if (!url) return;
+            replacement = `\n<img src="${url}" style="width:100%; border-radius:8px; margin:2rem 0;" />\n`;
+        } else if (type === 'h2') {
+            replacement = `\n<h2>${selected || 'Subheading'}</h2>\n`;
+        }
+
+        const newContent = content.substring(0, start) + replacement + content.substring(end);
+        setContent(newContent);
+
+        setTimeout(() => {
+            textarea.focus();
+            const newPos = start + replacement.length;
+            textarea.setSelectionRange(newPos, newPos);
+        }, 10);
+    };
+
     useEffect(() => {
         if (!id) return;
         const fetchArticle = async () => {
             setIsLoading(true);
             try {
-                // Use the articles list endpoint to get the article without incrementing view count
                 const res = await fetch(`/api/articles/${id}`);
                 if (!res.ok) {
                     setError("Could not load article.");
                     return;
                 }
                 const data = await res.json();
-                setTitle(data.title || "");
-                setContent(data.content || "");
-                // Normalize to lowercase to match option values
-                setCategory(data.category?.toLowerCase() || "campus");
-                setCoverImage(data.coverImage || "");
-                setStatus(data.status || "draft");
+                const art = data.article;
+                setTitle(art.title || "");
+                setContent(art.content || "");
+                // Normalize category if needed
+                setCategory(art.category?.toLowerCase() || "campus");
+                setCoverImage(art.coverImage || "");
+                setStatus(art.status || "draft");
             } catch (err) {
                 setError("Failed to load article.");
                 console.error(err);
@@ -161,8 +197,24 @@ export default function WriterEditArticle({ params }: { params: Promise<{ id: st
             {/* Editor Area */}
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
                 {/* Toolbar */}
-                <div className="h-12 bg-zinc-900/50 border-b border-zinc-800 flex items-center px-4 gap-3">
-                    <label className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Category</label>
+                <div className="h-12 bg-zinc-900/50 border-b border-zinc-800 flex items-center px-4 gap-1">
+                    <button
+                        onClick={() => insertTag('h2', 'h2')}
+                        className="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold text-zinc-300 uppercase hover:bg-zinc-800 rounded transition-colors"
+                    >
+                        <Type className="w-3.5 h-3.5" />
+                        Subheading
+                    </button>
+                    <div className="w-px h-4 bg-zinc-800 mx-1"></div>
+                    <button onClick={() => insertTag('b')} className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
+                    <button onClick={() => insertTag('i')} className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
+                    <div className="w-px h-4 bg-zinc-800 mx-1"></div>
+                    <button onClick={() => insertTag('a', 'a')} className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors" title="Link"><LinkIcon className="w-4 h-4" /></button>
+                    <button onClick={() => insertTag('img', 'img')} className="p-1.5 text-zinc-400 hover:text-zinc-100 transition-colors" title="Image"><ImageIcon className="w-4 h-4" /></button>
+
+                    <div className="flex-1"></div>
+
+                    <label className="text-xs text-zinc-500 font-semibold uppercase tracking-wider mr-2">Category</label>
                     <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
@@ -195,7 +247,7 @@ export default function WriterEditArticle({ params }: { params: Promise<{ id: st
                         </label>
                         {coverImage && (
                             <div className="relative w-full h-52 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-900">
-                                <Image src={coverImage} alt="Cover preview" fill className="object-cover" />
+                                <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
                                 <button
                                     onClick={() => setCoverImage("")}
                                     className="absolute top-2 right-2 bg-zinc-900/80 text-zinc-300 text-xs px-2 py-1 rounded hover:bg-zinc-800"
@@ -219,6 +271,7 @@ export default function WriterEditArticle({ params }: { params: Promise<{ id: st
 
                     {/* Body */}
                     <textarea
+                        ref={contentRef}
                         placeholder="Write your story here..."
                         value={content}
                         onChange={(e) => setContent(e.target.value)}

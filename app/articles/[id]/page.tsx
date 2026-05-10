@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft, ThumbsUp, MessageSquare, Loader2, Send, LogIn, Clock } from "lucide-react";
 import { useSession } from "next-auth/react";
 
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop";
+
 // This page is PUBLIC — anyone can read, but must be signed in to interact
 export default function PublicArticlePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -19,6 +21,27 @@ export default function PublicArticlePage({ params }: { params: Promise<{ id: st
     const [likeCount, setLikeCount] = useState(0);
     const [hasLiked, setHasLiked] = useState(false);
     const [notFound, setNotFound] = useState(false);
+
+    useEffect(() => {
+        // Fix broken inline images after they render
+        const fixImages = () => {
+            const content = document.getElementById('article-content');
+            if (!content) return;
+            const imgs = content.getElementsByTagName('img');
+            for (let i = 0; i < imgs.length; i++) {
+                imgs[i].onerror = () => {
+                    imgs[i].src = FALLBACK_IMAGE;
+                };
+                // Handle already broken images
+                if (imgs[i].naturalWidth === 0 && imgs[i].complete) {
+                    imgs[i].src = FALLBACK_IMAGE;
+                }
+            }
+        };
+        if (!isLoading && article) {
+            setTimeout(fixImages, 100);
+        }
+    }, [isLoading, article]);
 
     // Fetch article and comments — no session dependency so it always loads
     useEffect(() => {
@@ -38,8 +61,8 @@ export default function PublicArticlePage({ params }: { params: Promise<{ id: st
                 }
 
                 const artData = await artRes.json();
-                setArticle(artData);
-                setLikeCount(artData.likes?.length || 0);
+                setArticle(artData.article);
+                setLikeCount(artData.article?.likes?.length || 0);
 
                 if (comRes.ok) setComments(await comRes.json());
             } catch (err) {
@@ -165,15 +188,25 @@ export default function PublicArticlePage({ params }: { params: Promise<{ id: st
 
                 {/* Cover Image */}
                 {article.coverImage && (
-                    <div className="w-full h-72 sm:h-96 relative rounded-lg overflow-hidden mb-10 bg-zinc-900">
-                        <Image src={article.coverImage} alt={article.title} fill className="object-cover" priority />
+                    <div className="w-full h-[450px] relative rounded-2xl overflow-hidden mb-12 bg-zinc-900 shadow-2xl border border-zinc-900 group">
+                        <img
+                            src={article.coverImage}
+                            alt={article.title}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-1000"
+                            onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     </div>
                 )}
 
                 {/* Content */}
-                <div className="text-zinc-300 text-lg leading-relaxed whitespace-pre-wrap mb-12 selection:bg-zinc-700">
-                    {article.content}
-                </div>
+                <div
+                    id="article-content"
+                    className="text-zinc-300 text-[1.125rem] leading-[1.85] mb-12 selection:bg-zinc-700/50 prose prose-invert max-w-none 
+                               [&>p]:mb-6 [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:text-white [&>h2]:mt-10 [&>h2]:mb-4
+                               [&>img]:max-w-full [&>img]:h-auto [&>img]:rounded-xl [&>img]:my-10"
+                    dangerouslySetInnerHTML={{ __html: article.content }}
+                />
 
                 {/* Tags */}
                 {article.tags?.length > 0 && (

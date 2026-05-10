@@ -1,97 +1,67 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock, Share2, Bookmark, ThumbsUp, MessageSquare, Loader2, Send } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { ArrowLeft, Clock, Share2, Bookmark, ThumbsUp, MessageSquare, Loader2 } from "lucide-react";
+
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=1200&auto=format&fit=crop";
 
 export default function ArticleReadPage({ params }: { params: Promise<{ id: string }> }) {
     const unwrappedParams = use(params);
-    const { data: session } = useSession();
     const [article, setArticle] = useState<any>(null);
-    const [comments, setComments] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [newComment, setNewComment] = useState("");
-    const [isLiking, setIsLiking] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchArticle = async () => {
             try {
                 const res = await fetch(`/api/articles/${unwrappedParams.id}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    setArticle(data);
-                }
-
-                const comRes = await fetch(`/api/articles/${unwrappedParams.id}/comments`);
-                if (comRes.ok) {
-                    const comData = await comRes.json();
-                    setComments(comData);
-                }
-            } catch (err) {
-                console.error("Failed to fetch article:", err);
+                const data = await res.json();
+                if (res.ok) setArticle(data.article);
+            } catch (e) {
+                console.error(e);
             } finally {
-                setIsLoading(false);
+                setLoading(false);
             }
         };
-
         fetchArticle();
     }, [unwrappedParams.id]);
 
-    const handleLike = async () => {
-        if (!session) return alert("Login to like");
-        setIsLiking(true);
-        try {
-            const res = await fetch(`/api/articles/${unwrappedParams.id}/like`, { method: "POST" });
-            if (res.ok) {
-                const data = await res.json();
-                setArticle({ ...article, likes: data.liked 
-                    ? [...(article.likes || []), (session.user as any).id] 
-                    : (article.likes || []).filter((id: string) => id !== (session.user as any).id) 
-                });
+    useEffect(() => {
+        // Fix broken inline images after they render
+        const fixImages = () => {
+            const content = document.getElementById('dashboard-article-content');
+            if (!content) return;
+            const imgs = content.getElementsByTagName('img');
+            for (let i = 0; i < imgs.length; i++) {
+                imgs[i].onerror = () => {
+                    imgs[i].src = FALLBACK_IMAGE;
+                };
+                if (imgs[i].naturalWidth === 0 && imgs[i].complete) {
+                    imgs[i].src = FALLBACK_IMAGE;
+                }
             }
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsLiking(false);
+        };
+        if (!loading && article) {
+            setTimeout(fixImages, 100);
         }
-    };
+    }, [loading, article]);
 
-    const handleComment = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!session) return alert("Login to comment");
-        if (!newComment.trim()) return;
-
-        try {
-            const res = await fetch(`/api/articles/${unwrappedParams.id}/comments`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: newComment }),
-            });
-            if (res.ok) {
-                const comment = await res.json();
-                setComments([{ ...comment, user: { username: session.user?.name || "Me" } }, ...comments]);
-                setNewComment("");
-            }
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    if (isLoading) {
+    if (loading) {
         return (
-            <div className="min-h-[400px] flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-zinc-500" />
+            <div className="flex items-center justify-center p-32">
+                <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
             </div>
         );
     }
 
     if (!article) {
-        return <div className="text-center p-12 text-zinc-500">Article not found</div>;
+        return (
+            <div className="max-w-4xl mx-auto p-12 text-center border border-zinc-900 bg-zinc-950 mt-10 rounded-md">
+                <h1 className="text-xl font-bold text-zinc-300">Article not found</h1>
+                <Link href="/dashboard/reader" className="text-zinc-500 hover:text-zinc-300 mt-4 inline-block">Return to feed</Link>
+            </div>
+        );
     }
-
-    const hasLiked = article.likes?.includes((session?.user as any)?.id);
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -102,18 +72,13 @@ export default function ArticleReadPage({ params }: { params: Promise<{ id: stri
 
             <article className="bg-zinc-950 border border-zinc-900 rounded-lg overflow-hidden mt-4">
                 {/* Cover Image */}
-                <div className="w-full h-[400px] relative bg-zinc-900 border-b border-zinc-900">
-                    {article.coverImage ? (
-                        <Image
-                            src={article.coverImage}
-                            alt="Article cover"
-                            fill
-                            className="object-cover opacity-90"
-                            priority
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-700">No Cover Image</div>
-                    )}
+                <div className="w-full h-[300px] md:h-[400px] relative bg-zinc-900 border-b border-zinc-900 overflow-hidden">
+                    <img
+                        src={article.coverImage || FALLBACK_IMAGE}
+                        alt="Cover"
+                        className="w-full h-full object-cover opacity-90"
+                        onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_IMAGE; }}
+                    />
                 </div>
 
                 {/* Article Header */}
@@ -130,11 +95,11 @@ export default function ArticleReadPage({ params }: { params: Promise<{ id: stri
 
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-zinc-900">
                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-300 text-lg">
-                                {article.author?.username?.charAt(0) || 'A'}
+                            <div className="w-12 h-12 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center font-bold text-zinc-300 text-lg uppercase shadow-sm">
+                                {article.author?.username?.charAt(0) || "W"}
                             </div>
                             <div>
-                                <p className="text-base font-semibold text-zinc-200">{article.author?.username || 'Unknown'}</p>
+                                <p className="text-base font-semibold text-zinc-200">{article.author?.username}</p>
                                 <p className="text-xs text-zinc-500">{new Date(article.createdAt).toLocaleDateString()}</p>
                             </div>
                         </div>
@@ -143,68 +108,41 @@ export default function ArticleReadPage({ params }: { params: Promise<{ id: stri
                             <button className="p-2 border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 rounded-md transition-colors text-zinc-400 hover:text-zinc-200" title="Share">
                                 <Share2 className="w-4 h-4" />
                             </button>
+                            <button className="p-2 border border-zinc-800 bg-zinc-950 hover:bg-zinc-900 rounded-md transition-colors text-zinc-400 hover:text-zinc-200" title="Save">
+                                <Bookmark className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 {/* Article Body */}
-                <div className="p-8 md:p-12 prose prose-zinc prose-invert max-w-none text-zinc-300 leading-relaxed whitespace-pre-wrap">
-                    {article.content}
+                <div className="p-8 md:p-12 prose prose-zinc prose-invert max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-a:text-zinc-300 prose-blockquote:border-zinc-700 prose-blockquote:bg-zinc-900/50 prose-blockquote:px-6 prose-blockquote:py-2 prose-blockquote:rounded-r-md">
+                    <div id="dashboard-article-content" dangerouslySetInnerHTML={{ __html: article.content }} />
                 </div>
 
                 {/* Footer Actions */}
                 <div className="px-8 md:px-12 py-6 border-t border-zinc-900 flex items-center gap-6 bg-zinc-950 text-sm">
-                    <button 
-                        onClick={handleLike}
-                        disabled={isLiking}
-                        className={`flex items-center gap-2 transition-colors font-medium ${hasLiked ? 'text-blue-500' : 'text-zinc-400 hover:text-zinc-200'}`}
-                    >
-                        <ThumbsUp className={`w-5 h-5 ${hasLiked ? 'fill-current' : ''}`} />
+                    <button className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors font-medium">
+                        <ThumbsUp className="w-5 h-5" />
                         <span>{article.likes?.length || 0} Likes</span>
                     </button>
-                    <div className="flex items-center gap-2 text-zinc-400 font-medium">
+                    <button className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors font-medium">
                         <MessageSquare className="w-5 h-5" />
-                        <span>{comments.length} Comments</span>
-                    </div>
+                        <span>{article.comments || 0} Comments</span>
+                    </button>
                 </div>
             </article>
 
-            {/* Comments Section */}
-            <div className="space-y-6">
-                <h3 className="text-xl font-bold text-zinc-100">Discussion</h3>
-                
-                {session ? (
-                    <form onSubmit={handleComment} className="flex gap-4">
-                        <input 
-                            type="text" 
-                            placeholder="Add a comment..."
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            className="flex-1 bg-zinc-950 border border-zinc-800 rounded-md px-4 py-2 text-zinc-300 focus:outline-none focus:border-zinc-500"
-                        />
-                        <button type="submit" className="bg-zinc-100 text-zinc-900 px-4 py-2 rounded-md font-bold hover:bg-zinc-200 transition-colors">
-                            <Send className="w-4 h-4" />
-                        </button>
-                    </form>
-                ) : (
-                    <div className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-md text-zinc-500 text-sm">
-                        Please <Link href="/login" className="text-zinc-300 hover:underline">login</Link> to join the discussion.
-                    </div>
-                )}
-
-                <div className="space-y-4">
-                    {comments.map((comment) => (
-                        <div key={comment._id} className="p-4 bg-zinc-950 border border-zinc-900 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                                <span className="text-sm font-bold text-zinc-200">{comment.user?.username}</span>
-                                <span className="text-[10px] text-zinc-600">{new Date(comment.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-zinc-400 text-sm">{comment.content}</p>
-                        </div>
-                    ))}
-                    {comments.length === 0 && (
-                        <p className="text-zinc-600 text-sm italic">No comments yet. Be the first to share your thoughts!</p>
-                    )}
+            {/* Author Bio Box */}
+            <div className="bg-zinc-950 border border-zinc-900 rounded-lg p-6 flex flex-col sm:flex-row gap-6 mt-8">
+                <div className="w-16 h-16 rounded-md bg-zinc-900 border border-zinc-800 shrink-0 flex items-center justify-center font-bold text-zinc-300 text-2xl uppercase shadow-sm">
+                    {article.author?.username?.charAt(0) || "W"}
+                </div>
+                <div>
+                    <h3 className="text-zinc-100 font-bold mb-2 uppercase tracking-wide text-xs">About the Author</h3>
+                    <p className="text-zinc-400 text-sm leading-relaxed">
+                        Writer covering breaking events and comprehensive analyses for Newsroom. Contact them via {article.author?.email || "their profile"}.
+                    </p>
                 </div>
             </div>
         </div>
