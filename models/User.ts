@@ -22,7 +22,15 @@ const UserSchema = new Schema ({
         type: String,
         required: [true, "Passwords are no more optional in secure systems"],
         select: false
-    }
+    },
+    interests: {
+        type: [String],
+        default: []
+    },
+    following: [{
+        type: Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 }, {timestamps: true});
 
 const User = models.User || model("User", UserSchema);

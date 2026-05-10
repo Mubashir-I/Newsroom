@@ -29,9 +29,10 @@ export default function LoginPage() {
         });
 
         if (result?.error) {
-            setError("Invalid credentials. Please try again.");
+            setError("Invalid username or password. Please try again.");
             setIsLoading(false);
         } else {
+            // /dashboard auto-dispatches to the correct role page
             router.push("/dashboard");
             router.refresh();
         }
