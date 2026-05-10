@@ -1,10 +1,6 @@
-import mongoose, {Mongoose} from "mongoose"
+import mongoose, { Mongoose } from "mongoose"
 
 const URL = process.env.DB_URL;
-
-if(!URL) {
-    throw new Error ("Database URL not found or empty");
-}
 
 interface MongooseCache {
     conn: Mongoose | null;
@@ -14,10 +10,15 @@ interface MongooseCache {
 declare global {
     var mongoose: MongooseCache | undefined;
 }
-const cachedConn = global.mongoose || {conn: null, promise: null};
+const cachedConn = global.mongoose || { conn: null, promise: null };
+if (process.env.NODE_ENV !== 'production') global.mongoose = cachedConn;
 
 export const DatabaseConnection = async () => {
-    if(cachedConn.conn) {
+    if (!URL) {
+        throw new Error("Database URL not found or empty. Ensure DB_URL is set in environment variables.");
+    }
+
+    if (cachedConn.conn) {
         return cachedConn.conn;
     }
 
@@ -33,7 +34,7 @@ export const DatabaseConnection = async () => {
     try {
         cachedConn.conn = await cachedConn.promise;
     }
-    catch(error) {
+    catch (error) {
         cachedConn.promise = null;
         throw error;
     }
