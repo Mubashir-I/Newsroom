@@ -63,7 +63,7 @@ export async function GET() {
             }
         }
 
-        return NextResponse.json({ message: \`Success. Inserted \${insertedCount} new campus-centric articles.\` }, { status: 200 });
+        return NextResponse.json({ message: `Success. Inserted ${insertedCount} new campus-centric articles.` }, { status: 200 });
 
     } catch (error: any) {
         console.error("Seed Error:", error);
