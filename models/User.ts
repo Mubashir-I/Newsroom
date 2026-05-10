@@ -30,7 +30,15 @@ const UserSchema = new Schema ({
     following: [{
         type: Schema.Types.ObjectId,
         ref: 'User'
-    }]
+    }],
+    resetToken: {
+        type: String,
+        default: null
+    },
+    resetTokenExpiry: {
+        type: Date,
+        default: null
+    }
 }, {timestamps: true});
 
 const User = models.User || model("User", UserSchema);

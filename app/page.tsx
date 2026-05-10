@@ -5,6 +5,7 @@ import { ArrowRight, Newspaper, Shield, Zap, Loader2, Clock, TrendingUp } from "
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { Footer } from "@/components/Footer";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -203,13 +204,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="border-t border-zinc-900 px-6 py-6 flex items-center justify-between text-xs text-zinc-600">
-        <span>© 2026 Newsroom. All rights reserved.</span>
-        <div className="flex items-center gap-4">
-          <Link href="/login" className="hover:text-zinc-400 transition-colors">Sign In</Link>
-          <Link href="/signup" className="hover:text-zinc-400 transition-colors">Join</Link>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
