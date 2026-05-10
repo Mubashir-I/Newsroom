@@ -1,6 +1,5 @@
 import mongoose, { Mongoose } from "mongoose"
 
-const URL = process.env.MONGODB_URI || process.env.DB_URL;
 
 interface MongooseCache {
     conn: Mongoose | null;
@@ -14,8 +13,10 @@ const cachedConn = global.mongoose || { conn: null, promise: null };
 if (process.env.NODE_ENV !== 'production') global.mongoose = cachedConn;
 
 export const DatabaseConnection = async () => {
+    const URL = process.env.MONGODB_URI || process.env.DB_URL || process.env.MONGODB_URL;
+
     if (!URL) {
-        throw new Error("Database URL not found or empty. Ensure DB_URL is set in environment variables.");
+        throw new Error("Database URL not found. Tested: MONGODB_URI, DB_URL, MONGODB_URL. Please set one in Vercel Settings > Environment Variables.");
     }
 
     if (cachedConn.conn) {
